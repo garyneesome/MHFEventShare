@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -14,7 +17,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Reconstruct source and apply v0.7 patch
+      - name: Reconstruct v0.7 source
         run: |
           cat source_chunks/source.b64.* | base64 -d > source.zip
           unzip -q source.zip
@@ -22,33 +25,31 @@ jobs:
           cat v03_patch/patch.b64.* | base64 -d | gzip -d > v03.patch
           patch -p0 < v03.patch
           mv patchold MHFEventShare-v0.3.0
-          test -f MHFEventShare-v0.3.0/app/build.gradle
-          grep -q "versionName '0.3.0'" MHFEventShare-v0.3.0/app/build.gradle
           cat v04_patch/patch.b64.* | base64 -d | gzip -d > v04.patch
           patch -p1 -d MHFEventShare-v0.3.0 < v04.patch
           mv MHFEventShare-v0.3.0 MHFEventShare-v0.4.0
-          test -f MHFEventShare-v0.4.0/app/build.gradle
-          grep -q "versionName '0.4.0'" MHFEventShare-v0.4.0/app/build.gradle
           cat v05_code/v05.b64.* | base64 -d | gzip -d > v05.patch
-          test -s v05.patch
           patch -p1 -d MHFEventShare-v0.4.0 < v05.patch
           mv MHFEventShare-v0.4.0 MHFEventShare-v0.5.0
-          test -f MHFEventShare-v0.5.0/app/build.gradle
-          grep -q "versionName '0.5.0'" MHFEventShare-v0.5.0/app/build.gradle
           cat v06_patch/v06_code.b64.* | base64 -d | gzip -d > v06.patch
-          test -s v06.patch
           patch -p1 -d MHFEventShare-v0.5.0 < v06.patch
           mv MHFEventShare-v0.5.0 MHFEventShare-v0.6.0
-          test -f MHFEventShare-v0.6.0/app/build.gradle
-          grep -q "versionName '0.6.0'" MHFEventShare-v0.6.0/app/build.gradle
           cat v07_patch/v07_code.b64.* | base64 -d | gzip -d > v07.patch
-          test -s v07.patch
           awk '/^diff --git a\/app\/build.gradle/{copy=1} copy' v07.patch > v07-app.patch
-          test -s v07-app.patch
           patch -p1 -d MHFEventShare-v0.6.0 < v07-app.patch
           mv MHFEventShare-v0.6.0 MHFEventShare-v0.7.0
-          test -f MHFEventShare-v0.7.0/app/build.gradle
           grep -q "versionName '0.7.0'" MHFEventShare-v0.7.0/app/build.gradle
+
+      - name: Apply v0.8 workflow/UI changes
+        run: |
+          cat v08_patch/v08_app_code.b64 | base64 -d | gzip -d > v08.patch
+          test -s v08.patch
+          patch -p1 -d MHFEventShare-v0.7.0 < v08.patch
+          base64 -d v08_patch/v08_keystore.b64 > MHFEventShare-v0.7.0/app/mhf-test-debug.keystore
+          mv MHFEventShare-v0.7.0 MHFEventShare-v0.8.0
+          test -s MHFEventShare-v0.8.0/app/mhf-test-debug.keystore
+          grep -q "versionName '0.8.0'" MHFEventShare-v0.8.0/app/build.gradle
+          grep -q "Step.*of 3" MHFEventShare-v0.8.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -69,13 +70,30 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Build debug APK
-        working-directory: MHFEventShare-v0.7.0
+      - name: Build v0.8.0 APK
+        working-directory: MHFEventShare-v0.8.0
         run: gradle assembleDebug --stacktrace
 
-      - name: Upload APK
+      - name: Prepare named APK
+        run: cp MHFEventShare-v0.8.0/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.8.0.apk
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MHF-Event-Share-v0.7.0-debug
-          path: MHFEventShare-v0.7.0/app/build/outputs/apk/debug/app-debug.apk
+          name: MHF-Event-Share-v0.8.0
+          path: MHF-Event-Share-v0.8.0.apk
           if-no-files-found: error
+
+      - name: Publish GitHub Release for in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.8.0 >/dev/null 2>&1; then
+            gh release upload v0.8.0 MHF-Event-Share-v0.8.0.apk --clobber
+          else
+            gh release create v0.8.0 MHF-Event-Share-v0.8.0.apk \
+              --title "MHF Event Share v0.8.0" \
+              --notes "Consolidated three-step Event → Audience → Review & send workflow; Facebook event-link handoff; unified phone/email and WhatsApp audience selection; private one-to-one SMS; improved header/navigation; stable test signing for v0.8+ updates."
+          fi
