@@ -33,6 +33,7 @@ jobs:
           test -s v05.patch
           patch -p1 -d MHFEventShare-v0.4.0 < v05.patch
           mv MHFEventShare-v0.4.0 MHFEventShare-v0.5.0
+          patch -p1 -d MHFEventShare-v0.5.0 < v05_compile_fix.patch
           test -f MHFEventShare-v0.5.0/app/build.gradle
           grep -q "versionName '0.5.0'" MHFEventShare-v0.5.0/app/build.gradle
 
