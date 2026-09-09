@@ -48,6 +48,15 @@ jobs:
           test -s MHFEventShare-v0.8.0/app/mhf-test-debug.keystore
           grep -q "versionName '0.8.0'" MHFEventShare-v0.8.0/app/build.gradle
 
+      - name: Package reconstructed v0.8 source
+        run: zip -qr MHFEventShare-v0.8.0-source.zip MHFEventShare-v0.8.0
+
+      - name: Upload reconstructed source
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHFEventShare-v0.8.0-source
+          path: MHFEventShare-v0.8.0-source.zip
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -80,15 +89,3 @@ jobs:
           name: MHF-Event-Share-v0.8.0
           path: MHF-Event-Share-v0.8.0.apk
           if-no-files-found: error
-
-      - name: Publish GitHub Release for in-app updater
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh release view v0.8.0 >/dev/null 2>&1; then
-            gh release upload v0.8.0 MHF-Event-Share-v0.8.0.apk --clobber
-          else
-            gh release create v0.8.0 MHF-Event-Share-v0.8.0.apk --title "MHF Event Share v0.8.0" --notes "Simplified Event → Audience → Review & send workflow; Facebook event-link handoff; unified phone/email and WhatsApp audience selection; private one-to-one SMS; improved header/navigation; stable signing for v0.8+ updates."
-          fi
