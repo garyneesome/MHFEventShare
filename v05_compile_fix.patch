@@ -1,0 +1,24 @@
+--- a/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
++++ b/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+@@ -1782,9 +1782,7 @@
+                     else if (userInitiated) new AlertDialog.Builder(this).setTitle("You’re up to date").setMessage("MHF Event Share " + current + " is the newest published release.").setPositiveButton("OK", null).show();
+                 });
+             } catch (Exception e) {
+-                runOnUiThread(() -> { if (userInitiated) new AlertDialog.Builder(this).setTitle("Could not check for updates").setMessage("Check the internet connection and try again.
+-
+-" + e.getMessage()).setPositiveButton("OK", null).show(); });
++                runOnUiThread(() -> { if (userInitiated) new AlertDialog.Builder(this).setTitle("Could not check for updates").setMessage("Check the internet connection and try again.\n\n" + e.getMessage()).setPositiveButton("OK", null).show(); });
+             } finally { if (c != null) c.disconnect(); }
+         }).start();
+     }
+@@ -1810,9 +1808,7 @@
+     private void showUpdateAvailable(String tag, String page, String apkUrl, String apkName) {
+         AlertDialog.Builder b = new AlertDialog.Builder(this)
+                 .setTitle("Update available: " + tag)
+-                .setMessage("A newer MHF Event Share release is available on GitHub.
+-
+-During testing, Android may require a one-time reinstall until permanent release signing is configured.")
++                .setMessage("A newer MHF Event Share release is available on GitHub.\n\nDuring testing, Android may require a one-time reinstall until permanent release signing is configured.")
+                 .setNegativeButton("Later", null)
+                 .setNeutralButton("View release", (d,w) -> openUrl(page));
+         if (apkUrl != null && !apkUrl.isEmpty()) b.setPositiveButton("Download update", (d,w) -> downloadUpdate(apkUrl, apkName));
