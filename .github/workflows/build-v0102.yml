@@ -1,0 +1,117 @@
+name: Build Android APK v0.10.2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Reconstruct v0.10.1 source
+        run: |
+          cat source_chunks/source.b64.* | base64 -d > source.zip
+          unzip -q source.zip
+          mv MHFEventShare-v0.2.0 patchold
+          cat v03_patch/patch.b64.* | base64 -d | gzip -d > v03.patch
+          patch -p0 < v03.patch
+          mv patchold MHFEventShare-v0.3.0
+          cat v04_patch/patch.b64.* | base64 -d | gzip -d > v04.patch
+          patch -p1 -d MHFEventShare-v0.3.0 < v04.patch
+          mv MHFEventShare-v0.3.0 MHFEventShare-v0.4.0
+          cat v05_code/v05.b64.* | base64 -d | gzip -d > v05.patch
+          patch -p1 -d MHFEventShare-v0.4.0 < v05.patch
+          mv MHFEventShare-v0.4.0 MHFEventShare-v0.5.0
+          cat v06_patch/v06_code.b64.* | base64 -d | gzip -d > v06.patch
+          patch -p1 -d MHFEventShare-v0.5.0 < v06.patch
+          mv MHFEventShare-v0.5.0 MHFEventShare-v0.6.0
+          cat v07_patch/v07_code.b64.* | base64 -d | gzip -d > v07.patch
+          awk '/^diff --git a\/app\/build.gradle/{copy=1} copy' v07.patch > v07-app.patch
+          patch -p1 -d MHFEventShare-v0.6.0 < v07-app.patch
+          mv MHFEventShare-v0.6.0 MHFEventShare-v0.7.0
+          cat v08_patch/v08_app_code.b64.* | base64 -d | gzip -d > v08.patch
+          patch -p1 -d MHFEventShare-v0.7.0 < v08.patch
+          base64 -d v08_patch/v08_keystore.b64 > MHFEventShare-v0.7.0/app/mhf-test-debug.keystore
+          mv MHFEventShare-v0.7.0 MHFEventShare-v0.8.0
+          cat v09_patch/v09_code.b64.* | base64 -d | gzip -d > v09.patch
+          patch -p1 -d MHFEventShare-v0.8.0 < v09.patch
+          mv MHFEventShare-v0.8.0 MHFEventShare-v0.9.0
+          cat v10_patch/chunks/v10_code.b64.* | base64 -d | gzip -d > v10.patch
+          patch -p1 -d MHFEventShare-v0.9.0 < v10.patch
+          mv MHFEventShare-v0.9.0 MHFEventShare-v0.10.0
+          cat v101_patch/v101_code.b64 | base64 -d | gzip -d > v101.patch
+          patch -p1 -d MHFEventShare-v0.10.0 < v101.patch
+          mv MHFEventShare-v0.10.0 MHFEventShare-v0.10.1
+          grep -q "versionName '0.10.1'" MHFEventShare-v0.10.1/app/build.gradle
+
+      - name: Apply v0.10.2 workflow fixes
+        run: |
+          cat v102_patch/v102_code.b64.* | base64 -d | gzip -d > v102.patch
+          test -s v102.patch
+          patch -p1 -d MHFEventShare-v0.10.1 < v102.patch
+          mv MHFEventShare-v0.10.1 MHFEventShare-v0.10.2
+          grep -q "versionName '0.10.2'" MHFEventShare-v0.10.2/app/build.gradle
+          grep -q 'autoOpenWhatsAppAfterLocal' MHFEventShare-v0.10.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+          grep -q 'Open my Facebook events' MHFEventShare-v0.10.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'WhatsApp next' MHFEventShare-v0.10.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+
+      - name: Package v0.10.2 source
+        run: zip -qr MHFEventShare-v0.10.2-source.zip MHFEventShare-v0.10.2
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHFEventShare-v0.10.2-source
+          path: MHFEventShare-v0.10.2-source.zip
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Android SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build v0.10.2 APK
+        working-directory: MHFEventShare-v0.10.2
+        run: gradle assembleDebug --stacktrace
+
+      - name: Prepare named APK
+        run: cp MHFEventShare-v0.10.2/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.10.2.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHF-Event-Share-v0.10.2
+          path: MHF-Event-Share-v0.10.2.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release for in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.10.2 >/dev/null 2>&1; then
+            gh release upload v0.10.2 MHF-Event-Share-v0.10.2.apk --clobber
+          else
+            gh release create v0.10.2 MHF-Event-Share-v0.10.2.apk --title "MHF Event Share v0.10.2" --notes "Simplifies the send flow: text/email first with sent/failed results, then WhatsApp last without a redundant confirmation checklist. Facebook metadata lookup is non-blocking and short; the Facebook button attempts hosted/created events first. Adds a setting to open WhatsApp directly after local send results and keeps logos visible in dark mode."
+          fi
