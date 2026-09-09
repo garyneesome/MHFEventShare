@@ -15,7 +15,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
-      - name: Reconstruct v0.7 source
+      - name: Reconstruct v0.8 source
         run: |
           cat source_chunks/source.b64.* | base64 -d > source.zip
           unzip -q source.zip
@@ -36,26 +36,30 @@ jobs:
           awk '/^diff --git a\/app\/build.gradle/{copy=1} copy' v07.patch > v07-app.patch
           patch -p1 -d MHFEventShare-v0.6.0 < v07-app.patch
           mv MHFEventShare-v0.6.0 MHFEventShare-v0.7.0
-          grep -q "versionName '0.7.0'" MHFEventShare-v0.7.0/app/build.gradle
-
-      - name: Apply v0.8 workflow/UI changes
-        run: |
           cat v08_patch/v08_app_code.b64.* | base64 -d | gzip -d > v08.patch
-          test -s v08.patch
           patch -p1 -d MHFEventShare-v0.7.0 < v08.patch
           base64 -d v08_patch/v08_keystore.b64 > MHFEventShare-v0.7.0/app/mhf-test-debug.keystore
           mv MHFEventShare-v0.7.0 MHFEventShare-v0.8.0
-          test -s MHFEventShare-v0.8.0/app/mhf-test-debug.keystore
           grep -q "versionName '0.8.0'" MHFEventShare-v0.8.0/app/build.gradle
 
-      - name: Package reconstructed v0.8 source
-        run: zip -qr MHFEventShare-v0.8.0-source.zip MHFEventShare-v0.8.0
+      - name: Apply v0.9 workflow and UI changes
+        run: |
+          cat v09_patch/v09_code.b64.* | base64 -d | gzip -d > v09.patch
+          test -s v09.patch
+          patch -p1 -d MHFEventShare-v0.8.0 < v09.patch
+          mv MHFEventShare-v0.8.0 MHFEventShare-v0.9.0
+          grep -q "versionName '0.9.0'" MHFEventShare-v0.9.0/app/build.gradle
+          grep -q 'themeMode' MHFEventShare-v0.9.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+          grep -q 'showSendResults' MHFEventShare-v0.9.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
 
-      - name: Upload reconstructed source
+      - name: Package v0.9 source
+        run: zip -qr MHFEventShare-v0.9.0-source.zip MHFEventShare-v0.9.0
+
+      - name: Upload source artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MHFEventShare-v0.8.0-source
-          path: MHFEventShare-v0.8.0-source.zip
+          name: MHFEventShare-v0.9.0-source
+          path: MHFEventShare-v0.9.0-source.zip
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -76,16 +80,28 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Build v0.8.0 APK
-        working-directory: MHFEventShare-v0.8.0
+      - name: Build v0.9.0 APK
+        working-directory: MHFEventShare-v0.9.0
         run: gradle assembleDebug --stacktrace
 
       - name: Prepare named APK
-        run: cp MHFEventShare-v0.8.0/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.8.0.apk
+        run: cp MHFEventShare-v0.9.0/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.9.0.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MHF-Event-Share-v0.8.0
-          path: MHF-Event-Share-v0.8.0.apk
+          name: MHF-Event-Share-v0.9.0
+          path: MHF-Event-Share-v0.9.0.apk
           if-no-files-found: error
+
+      - name: Publish GitHub Release for in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.9.0 >/dev/null 2>&1; then
+            gh release upload v0.9.0 MHF-Event-Share-v0.9.0.apk --clobber
+          else
+            gh release create v0.9.0 MHF-Event-Share-v0.9.0.apk --title "MHF Event Share v0.9.0" --notes "Restores Settings with System/Light/Dark themes; explicit Select all/Deselect all/individual recipient selection; SMS then email then WhatsApp sending order; private one-to-one SMS; WhatsApp group-name mappings; user-confirmed sent/failed/skipped results; richer Facebook event import including public metadata where Facebook exposes it; simplified Home and send flow."
+          fi
