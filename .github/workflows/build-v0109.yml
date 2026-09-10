@@ -74,7 +74,7 @@ jobs:
 
       - name: Apply v0.10.9 live-screen OCR fallback
         run: |
-          cat v109_patch/v109_code.b64 | base64 -d | gzip -d > v109.patch
+          cat v109_patch/chunks/*.b64 | base64 -d | gzip -d > v109.patch
           test -s v109.patch
           patch -p1 -d MHFEventShare-v0.10.8 < v109.patch
           mv MHFEventShare-v0.10.8 MHFEventShare-v0.10.9
