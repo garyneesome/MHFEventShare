@@ -17,78 +17,55 @@ jobs:
 
       - name: Reconstruct v0.12.0 source
         run: |
-          cat source_chunks/source.b64.* | base64 -d > source.zip
-          unzip -q source.zip
-          mv MHFEventShare-v0.2.0 patchold
-          cat v03_patch/patch.b64.* | base64 -d | gzip -d > v03.patch
-          patch -p0 < v03.patch
-          mv patchold MHFEventShare-v0.3.0
-          cat v04_patch/patch.b64.* | base64 -d | gzip -d > v04.patch
-          patch -p1 -d MHFEventShare-v0.3.0 < v04.patch
-          mv MHFEventShare-v0.3.0 MHFEventShare-v0.4.0
-          cat v05_code/v05.b64.* | base64 -d | gzip -d > v05.patch
-          patch -p1 -d MHFEventShare-v0.4.0 < v05.patch
-          mv MHFEventShare-v0.4.0 MHFEventShare-v0.5.0
-          cat v06_patch/v06_code.b64.* | base64 -d | gzip -d > v06.patch
-          patch -p1 -d MHFEventShare-v0.5.0 < v06.patch
-          mv MHFEventShare-v0.5.0 MHFEventShare-v0.6.0
-          cat v07_patch/v07_code.b64.* | base64 -d | gzip -d > v07.patch
-          awk '/^diff --git a\/app\/build.gradle/{copy=1} copy' v07.patch > v07-app.patch
-          patch -p1 -d MHFEventShare-v0.6.0 < v07-app.patch
-          mv MHFEventShare-v0.6.0 MHFEventShare-v0.7.0
-          cat v08_patch/v08_app_code.b64.* | base64 -d | gzip -d > v08.patch
-          patch -p1 -d MHFEventShare-v0.7.0 < v08.patch
-          base64 -d v08_patch/v08_keystore.b64 > MHFEventShare-v0.7.0/app/mhf-test-debug.keystore
-          mv MHFEventShare-v0.7.0 MHFEventShare-v0.8.0
-          cat v09_patch/v09_code.b64.* | base64 -d | gzip -d > v09.patch
-          patch -p1 -d MHFEventShare-v0.8.0 < v09.patch
-          mv MHFEventShare-v0.8.0 MHFEventShare-v0.9.0
-          cat v10_patch/chunks/v10_code.b64.* | base64 -d | gzip -d > v10.patch
-          patch -p1 -d MHFEventShare-v0.9.0 < v10.patch
-          mv MHFEventShare-v0.9.0 MHFEventShare-v0.10.0
-          cat v101_patch/v101_code.b64 | base64 -d | gzip -d > v101.patch
-          patch -p1 -d MHFEventShare-v0.10.0 < v101.patch
-          mv MHFEventShare-v0.10.0 MHFEventShare-v0.10.1
-          cat v102_patch/v102_code.b64.* | base64 -d | gzip -d > v102.patch
-          patch -p1 -d MHFEventShare-v0.10.1 < v102.patch
-          mv MHFEventShare-v0.10.1 MHFEventShare-v0.10.2
-          cat v103_patch/v103_code.b64 | base64 -d | gzip -d > v103.patch
-          patch -p1 -d MHFEventShare-v0.10.2 < v103.patch
-          mv MHFEventShare-v0.10.2 MHFEventShare-v0.10.3
-          cat v104_patch/v104_code.b64 | base64 -d | gzip -d > v104.patch
-          patch -p1 -d MHFEventShare-v0.10.3 < v104.patch
-          mv MHFEventShare-v0.10.3 MHFEventShare-v0.10.4
-          cat v105_patch/v105_code.b64 | base64 -d | gzip -d > v105.patch
-          patch -p1 -d MHFEventShare-v0.10.4 < v105.patch
-          mv MHFEventShare-v0.10.4 MHFEventShare-v0.10.5
-          cat v106_patch/v106_code.b64 | base64 -d | gzip -d > v106.patch
-          patch -p1 -d MHFEventShare-v0.10.5 < v106.patch
-          mv MHFEventShare-v0.10.5 MHFEventShare-v0.10.6
-          cat v107_patch/v107_code.b64 | base64 -d | gzip -d > v107.patch
-          patch -p1 -d MHFEventShare-v0.10.6 < v107.patch
-          mv MHFEventShare-v0.10.6 MHFEventShare-v0.10.7
-          cat v108_patch/v108_code.b64 | base64 -d | gzip -d > v108.patch
-          patch -p1 -d MHFEventShare-v0.10.7 < v108.patch
-          mv MHFEventShare-v0.10.7 MHFEventShare-v0.10.8
-          cat v011_patch/v011_code.b64 | base64 -d | gzip -d > v011.patch
-          patch -p1 -d MHFEventShare-v0.10.8 < v011.patch
-          mv MHFEventShare-v0.10.8 MHFEventShare-v0.11.0
-          cat v012_patch/v012_code.b64.* | base64 -d | gzip -d > v012.patch
-          patch -p1 -d MHFEventShare-v0.11.0 < v012.patch
-          mv MHFEventShare-v0.11.0 MHFEventShare-v0.12.0
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('.github/workflows/build-v0120.yml').read_text().splitlines()
+          wanted = {
+              'Reconstruct v0.11.0 source',
+              'Apply v0.12.0 event progress workflow',
+          }
+          out = ['set -euo pipefail']
+          i = 0
+          while i < len(src):
+              line = src[i]
+              if line.startswith('      - name: '):
+                  name = line[len('      - name: '):]
+                  if name in wanted:
+                      i += 1
+                      while i < len(src) and src[i].strip() != 'run: |':
+                          i += 1
+                      if i >= len(src):
+                          raise SystemExit(f'run block not found for {name}')
+                      i += 1
+                      while i < len(src) and not src[i].startswith('      - name: '):
+                          l = src[i]
+                          if l.startswith('          '):
+                              out.append(l[10:])
+                          elif l.strip():
+                              raise SystemExit(f'unexpected indentation in {name}: {l!r}')
+                          else:
+                              out.append('')
+                          i += 1
+                      continue
+              i += 1
+          if not any('MHFEventShare-v0.12.0' in x for x in out):
+              raise SystemExit('failed to extract v0.12 reconstruction blocks')
+          Path('/tmp/rebuild-v012.sh').write_text('\n'.join(out) + '\n')
+          PY
+          bash /tmp/rebuild-v012.sh
           grep -q "versionName '0.12.0'" MHFEventShare-v0.12.0/app/build.gradle
 
-      - name: Apply v0.13.0 streamlined sharing and ideas
+      - name: Apply v0.13.0 improvements
         run: |
-          cat v013_patch/v013_code.b64 | base64 -d | gzip -d > v013.patch
+          cat v013_patch/v013_code.b64.* | base64 -d | gzip -d > v013.patch
           test -s v013.patch
           patch -p1 -d MHFEventShare-v0.12.0 < v013.patch
           mv MHFEventShare-v0.12.0 MHFEventShare-v0.13.0
           grep -q "versionName '0.13.0'" MHFEventShare-v0.13.0/app/build.gradle
           grep -q 'android.permission.SEND_SMS' MHFEventShare-v0.13.0/app/src/main/AndroidManifest.xml
-          grep -q 'Send selected texts in one batch' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
-          grep -q 'Ideas & dates' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
-          grep -q 'Recent & completed' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'directSmsMode' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+          grep -q "Ideas & what's on" MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'swipeEventCard' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
 
       - name: Package v0.13.0 source
         run: zip -qr MHFEventShare-v0.13.0-source.zip MHFEventShare-v0.13.0
@@ -138,7 +115,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES="Sharing is more streamlined: selected SMS recipients can now be sent private individual texts in one batch from MHF with named success/failure results; email remains one BCC compose; WhatsApp is a clean next step rather than an explanatory card. Recent/completed events are collapsible and swipe right to edit / swipe left to delete. A new Ideas & dates area highlights mental-health awareness dates and selected local opportunities for Northamptonshire, Oxfordshire and Buckinghamshire, with configurable area filters and one-tap event creation."
+          NOTES="Cleaner guided sending: text/email is one step and WhatsApp is the next. Recent and event-status lists are collapsible and event cards support swipe-left Edit/Delete. Optional Fast private text sending attempts one-to-one SMS directly with Android sent/failed callbacks and falls back to the Messages app if the phone blocks SEND_SMS. New Ideas & what's on section provides configurable mental-health awareness dates and curated Northamptonshire, Oxfordshire and Buckinghamshire ideas from a refreshable public feed."
           if gh release view v0.13.0 >/dev/null 2>&1; then
             gh release upload v0.13.0 MHF-Event-Share-v0.13.0.apk --clobber
           else
