@@ -30,6 +30,7 @@ jobs:
           test -s v0132.patch
           patch -p1 -d MHFEventShare-v0.13.1 < v0132.patch
           mv MHFEventShare-v0.13.1 MHFEventShare-v0.13.2
+          sed -i 's/Settings.ACTION_MANAGE_SPECIAL_APP_ACCESSES/Settings.ACTION_APPLICATION_SETTINGS/g' MHFEventShare-v0.13.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
           grep -q "versionName '0.13.2'" MHFEventShare-v0.13.2/app/build.gradle
           grep -q 'showSmsSetupAssistant' MHFEventShare-v0.13.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
           grep -q 'smsSetupConfirmed' MHFEventShare-v0.13.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
@@ -83,7 +84,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES="Keeps the v0.13.1 event accordions, swipe actions and mental-health ideas, and adds a one-time private multi-SMS setup assistant. MHF can open all selected SMS recipients in one Messages compose screen after Mass text is configured. It links to Google Messages and Android Special app access and explains Mass text, RCS and Premium SMS settings. Android still requires the user to change protected messaging settings manually. After batch sending, MHF records sent/failed status per person."
+          NOTES="Keeps the v0.13.1 event accordions, swipe actions and mental-health ideas, and adds a one-time private multi-SMS setup assistant. MHF can open all selected SMS recipients in one Messages compose screen after Mass text is configured. It links to Google Messages and Android app settings and explains Mass text, RCS and Premium SMS settings. Android still requires the user to change protected messaging settings manually. After batch sending, MHF records sent/failed status per person."
           if gh release view v0.13.2 >/dev/null 2>&1; then
             gh release upload v0.13.2 MHF-Event-Share-v0.13.2.apk --clobber
           else
