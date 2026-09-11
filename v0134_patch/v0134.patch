@@ -1,0 +1,239 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 5a1ebeb..ac64ae4 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,3 +1,12 @@
++## v0.13.4
++- Completely redesigned the app header for a cleaner, more professional Mental Health Friends identity.
++- The full “Mental Health Friends” name now has its own brand row so it no longer gets clipped by action buttons.
++- Adds the “Event Share • Stronger together” supporting line and a richer accent-colour gradient.
++- Moves Settings and Menu into a dedicated navigation row with clearer touch targets.
++- Long page titles are given more room and automatically reduce slightly in size instead of disappearing.
++- Guided-flow pages prioritise Back, the current page name and Exit so the header stays uncluttered.
++- No event, contact, sending, sharing, colour-setting or workflow behaviour changed.
++
+ ## v0.13.2
+ - Adds a guided one-time private multi-SMS setup assistant.
+ - After setup, all selected SMS recipients can open in one Messages compose screen instead of returning to MHF after every person.
+diff --git a/README.md b/README.md
+index cae9e9e..438a242 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,4 @@
+-# Mental Health Friends – Event Share v0.11.0
++# Mental Health Friends – Event Share v0.13.4
+ 
+ A simple Android app for creating/importing community events and sharing them by private SMS, BCC email and WhatsApp.
+ 
+diff --git a/app/build.gradle b/app/build.gradle
+index 02d9af6..d3e2207 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -10,8 +10,8 @@ android {
+         applicationId 'uk.co.mentalhealthfriends.eventshare'
+         minSdk 26
+         targetSdk 36
+-        versionCode 133
+-        versionName '0.13.3'
++        versionCode 134
++        versionName '0.13.4'
+     }
+ 
+     // Stable TEST signing so v0.8+ test APKs can install over one another.
+diff --git a/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java b/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+index 12d8c31..74dce07 100644
+--- a/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
++++ b/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+@@ -132,6 +132,8 @@ public class MainActivity extends Activity {
+     private TextView headerTitle;
+     private TextView headerBack;
+     private TextView headerCancel;
++    private TextView headerSettings;
++    private TextView headerMenu;
+     private Runnable headerBackAction;
+     private String currentScreenTitle = "Home";
+     private final LinkedHashSet<String> selectedGroupIds = new LinkedHashSet<>();
+@@ -307,63 +309,98 @@ public class MainActivity extends Activity {
+ 
+         header = new LinearLayout(this);
+         header.setOrientation(LinearLayout.VERTICAL);
+-        header.setPadding(dp(12), dp(8), dp(12), dp(8));
+-        header.setBackgroundColor(YELLOW);
++        header.setPadding(dp(12), dp(10), dp(12), dp(12));
++        header.setBackground(headerGradient());
++        header.setElevation(dp(4));
+ 
++        // Brand gets its own full-width row so the organisation name can never be
++        // squeezed between action icons on narrower phones.
+         LinearLayout brandRow = new LinearLayout(this);
+         brandRow.setOrientation(LinearLayout.HORIZONTAL);
+         brandRow.setGravity(Gravity.CENTER_VERTICAL);
++        brandRow.setPadding(dp(2), dp(2), dp(2), dp(7));
+ 
+-        View logo = brandMark(38);
+-        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(42), dp(42));
+-        logoParams.setMargins(0, 0, dp(10), 0);
++        View logo = brandMark(46);
++        logo.setElevation(dp(3));
++        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(dp(50), dp(50));
++        logoParams.setMargins(0, 0, dp(12), 0);
+         brandRow.addView(logo, logoParams);
+ 
+-        TextView brandName = text("Mental Health Friends", 18, true, HEADER_TEXT);
+-        brandName.setSingleLine(true);
+-        brandName.setGravity(Gravity.CENTER_VERTICAL);
+-        brandRow.addView(brandName, new LinearLayout.LayoutParams(0, dp(46), 1));
+-
+-        TextView settingsButton = text("⚙", 22, true, HEADER_TEXT);
+-        settingsButton.setGravity(Gravity.CENTER);
+-        settingsButton.setContentDescription("Settings");
+-        settingsButton.setOnClickListener(v -> { wizardActive = false; showSettings(); });
+-        brandRow.addView(settingsButton, new LinearLayout.LayoutParams(dp(46), dp(48)));
+-
+-        TextView menu = text("⋮", 28, true, HEADER_TEXT);
+-        menu.setGravity(Gravity.CENTER);
+-        menu.setContentDescription("Open menu");
+-        menu.setOnClickListener(v -> openDrawer());
+-        brandRow.addView(menu, new LinearLayout.LayoutParams(dp(46), dp(48)));
++        LinearLayout brandText = new LinearLayout(this);
++        brandText.setOrientation(LinearLayout.VERTICAL);
++        brandText.setGravity(Gravity.CENTER_VERTICAL);
++
++        TextView brandName = text("Mental Health Friends", 19, true, HEADER_TEXT);
++        brandName.setMaxLines(2);
++        brandName.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
++        brandName.setLineSpacing(0f, 1.02f);
++        brandText.addView(brandName, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
++
++        TextView brandTagline = text("Event Share  •  Stronger together", 11, false, HEADER_TEXT);
++        brandTagline.setSingleLine(true);
++        brandTagline.setAlpha(0.82f);
++        brandTagline.setLetterSpacing(0.025f);
++        LinearLayout.LayoutParams tagParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
++        tagParams.topMargin = dp(1);
++        brandText.addView(brandTagline, tagParams);
++        brandRow.addView(brandText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+         header.addView(brandRow);
+ 
++        // Navigation and actions sit on a second row. This keeps page context obvious
++        // while preserving the complete Mental Health Friends name above.
+         LinearLayout navRow = new LinearLayout(this);
+         navRow.setOrientation(LinearLayout.HORIZONTAL);
+         navRow.setGravity(Gravity.CENTER_VERTICAL);
+         navRow.setPadding(0, dp(2), 0, 0);
+ 
+-        headerBack = text("← Back", 12, true, CHARCOAL);
++        headerBack = text("←  Back", 12, true, HEADER_TEXT);
+         headerBack.setGravity(Gravity.CENTER);
+-        headerBack.setPadding(dp(10), 0, dp(10), 0);
+-        headerBack.setBackground(ripple(SURFACE, SURFACE_RIPPLE, 14));
++        headerBack.setPadding(dp(12), 0, dp(12), 0);
++        headerBack.setBackground(headerControlRipple(20));
+         headerBack.setContentDescription("Back");
+         headerBack.setVisibility(View.GONE);
+         headerBack.setOnClickListener(v -> navigateBack());
+-        navRow.addView(headerBack, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(38)));
++        LinearLayout.LayoutParams backParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(40));
++        backParams.setMargins(0, 0, dp(7), 0);
++        navRow.addView(headerBack, backParams);
+ 
+-        headerTitle = text("Home", 12, true, HEADER_TEXT);
++        headerTitle = text("Home", 14, true, HEADER_TEXT);
+         headerTitle.setGravity(Gravity.CENTER_VERTICAL);
+-        headerTitle.setPadding(dp(10), 0, dp(8), 0);
+-        navRow.addView(headerTitle, new LinearLayout.LayoutParams(0, dp(38), 1));
++        headerTitle.setSingleLine(true);
++        headerTitle.setEllipsize(TextUtils.TruncateAt.END);
++        headerTitle.setPadding(dp(14), 0, dp(12), 0);
++        headerTitle.setBackground(headerControlRipple(20));
++        navRow.addView(headerTitle, new LinearLayout.LayoutParams(0, dp(40), 1));
++
++        headerSettings = text("⚙", 20, true, HEADER_TEXT);
++        headerSettings.setGravity(Gravity.CENTER);
++        headerSettings.setBackground(headerControlRipple(22));
++        headerSettings.setContentDescription("Settings and appearance");
++        headerSettings.setOnClickListener(v -> { wizardActive = false; showSettings(); });
++        LinearLayout.LayoutParams settingsParams = new LinearLayout.LayoutParams(dp(42), dp(42));
++        settingsParams.setMargins(dp(7), 0, 0, 0);
++        navRow.addView(headerSettings, settingsParams);
++
++        headerMenu = text("⋮", 25, true, HEADER_TEXT);
++        headerMenu.setGravity(Gravity.CENTER);
++        headerMenu.setBackground(headerControlRipple(22));
++        headerMenu.setContentDescription("Open menu");
++        headerMenu.setOnClickListener(v -> openDrawer());
++        LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(dp(42), dp(42));
++        menuParams.setMargins(dp(7), 0, 0, 0);
++        navRow.addView(headerMenu, menuParams);
+ 
+         headerCancel = text("Exit", 12, true, Color.WHITE);
+         headerCancel.setGravity(Gravity.CENTER);
+-        headerCancel.setPadding(dp(10), 0, dp(10), 0);
+-        headerCancel.setBackground(ripple(Color.rgb(32, 33, 36), Color.rgb(52, 54, 59), 14));
++        headerCancel.setPadding(dp(12), 0, dp(12), 0);
++        headerCancel.setBackground(ripple(Color.rgb(32, 33, 36), Color.rgb(52, 54, 59), 20));
+         headerCancel.setVisibility(View.GONE);
+         headerCancel.setContentDescription("Exit the guided wizard and return home");
+         headerCancel.setOnClickListener(v -> { wizardActive = false; importReturnToAudience = false; showHome(); });
+-        navRow.addView(headerCancel, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(38)));
++        LinearLayout.LayoutParams exitParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, dp(40));
++        exitParams.setMargins(dp(7), 0, 0, 0);
++        navRow.addView(headerCancel, exitParams);
++
+         header.addView(navRow);
+         outer.addView(header);
+ 
+@@ -5113,9 +5150,20 @@ public class MainActivity extends Activity {
+         headerTitle.setText(title);
+         headerBackAction = backAction;
+         boolean home = "Home".equals(title);
++        boolean guidedSubPage = !home && wizardActive;
++
+         headerBack.setVisibility(home ? View.GONE : View.VISIBLE);
+-        // Only show Exit while the guided wizard is active; normal sub-pages just use Back.
+-        headerCancel.setVisibility(!home && wizardActive ? View.VISIBLE : View.GONE);
++        // Settings gets a dedicated shortcut on Home. On sub-pages we prioritise
++        // the complete page title; Settings remains one tap away in the menu.
++        headerSettings.setVisibility(home ? View.VISIBLE : View.GONE);
++        headerMenu.setVisibility(guidedSubPage ? View.GONE : View.VISIBLE);
++        headerCancel.setVisibility(guidedSubPage ? View.VISIBLE : View.GONE);
++
++        // Long screen names should remain readable rather than disappearing behind
++        // the navigation controls on smaller devices.
++        if (title.length() > 18) headerTitle.setTextSize(12);
++        else if (title.length() > 13) headerTitle.setTextSize(13);
++        else headerTitle.setTextSize(14);
+         body.removeAllViews();
+     }
+ 
+@@ -5448,6 +5496,30 @@ public class MainActivity extends Activity {
+         return new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+     }
+ 
++    private GradientDrawable headerGradient() {
++        int lighter = blendColor(YELLOW, Color.WHITE, isDarkMode() ? 0.05f : 0.16f);
++        int deeper = blendColor(YELLOW, Color.BLACK, isDarkMode() ? 0.10f : 0.06f);
++        GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{lighter, YELLOW, deeper});
++        g.setGradientType(GradientDrawable.LINEAR_GRADIENT);
++        return g;
++    }
++
++    private RippleDrawable headerControlRipple(int radiusDp) {
++        boolean lightText = HEADER_TEXT == Color.WHITE;
++        int fill = lightText ? Color.argb(38, 255, 255, 255) : Color.argb(54, 255, 255, 255);
++        int pressed = lightText ? Color.argb(74, 255, 255, 255) : Color.argb(86, 255, 255, 255);
++        GradientDrawable content = rounded(fill, fill, radiusDp);
++        return new RippleDrawable(ColorStateList.valueOf(pressed), content, null);
++    }
++
++    private int blendColor(int from, int to, float amount) {
++        float a = Math.max(0f, Math.min(1f, amount));
++        int r = Math.round(Color.red(from) * (1f - a) + Color.red(to) * a);
++        int g = Math.round(Color.green(from) * (1f - a) + Color.green(to) * a);
++        int b = Math.round(Color.blue(from) * (1f - a) + Color.blue(to) * a);
++        return Color.rgb(r, g, b);
++    }
++
+     private GradientDrawable rounded(int fill, int stroke, int radiusDp) {
+         GradientDrawable g = new GradientDrawable();
+         g.setColor(fill);
