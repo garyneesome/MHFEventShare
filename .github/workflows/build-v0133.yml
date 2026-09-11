@@ -1,0 +1,102 @@
+name: Build Android APK v0.13.3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out patch source
+        uses: actions/checkout@v4
+
+      - name: Download v0.13.1 source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 34618122974 -R garyneesome/MHFEventShare -n MHFEventShare-v0.13.1-source -D base
+          unzip -q base/MHFEventShare-v0.13.1-source.zip
+          test -d MHFEventShare-v0.13.1
+
+      - name: Recreate v0.13.2 Fast Text setup
+        run: |
+          cat v0132_patch/chunks/v0132_code.b64.* | base64 -d | gzip -d > v0132.patch
+          test -s v0132.patch
+          patch -p1 -d MHFEventShare-v0.13.1 < v0132.patch
+          mv MHFEventShare-v0.13.1 MHFEventShare-v0.13.2
+          sed -i 's/Settings.ACTION_MANAGE_SPECIAL_APP_ACCESSES/Settings.ACTION_APPLICATION_SETTINGS/g' MHFEventShare-v0.13.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q "versionName '0.13.2'" MHFEventShare-v0.13.2/app/build.gradle
+          grep -q 'showSmsSetupAssistant' MHFEventShare-v0.13.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'smsSetupConfirmed' MHFEventShare-v0.13.2/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+
+      - name: Apply v0.13.3 visual colour controls
+        run: |
+          python3 v0133_patch/apply_v0133.py MHFEventShare-v0.13.2
+          mv MHFEventShare-v0.13.2 MHFEventShare-v0.13.3
+          grep -q "versionCode 133" MHFEventShare-v0.13.3/app/build.gradle
+          grep -q "versionName '0.13.3'" MHFEventShare-v0.13.3/app/build.gradle
+          grep -q 'Header & accent colour' MHFEventShare-v0.13.3/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'Page background colour' MHFEventShare-v0.13.3/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'showColourPicker' MHFEventShare-v0.13.3/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'showSmsSetupAssistant' MHFEventShare-v0.13.3/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+
+      - name: Package v0.13.3 source
+        run: zip -qr MHFEventShare-v0.13.3-source.zip MHFEventShare-v0.13.3
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHFEventShare-v0.13.3-source
+          path: MHFEventShare-v0.13.3-source.zip
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Android SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build v0.13.3 APK
+        working-directory: MHFEventShare-v0.13.3
+        run: gradle assembleDebug --stacktrace
+
+      - name: Prepare named APK
+        run: cp MHFEventShare-v0.13.3/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.13.3.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHF-Event-Share-v0.13.3
+          path: MHF-Event-Share-v0.13.3.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release for in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Branding colours are now clearly labelled and chosen visually: Header & accent colour controls the top bar, primary buttons and highlights, while Page background colour controls the page background. Tapping either opens a live colour preview with Hue, Colour strength and Brightness sliders, so users no longer need to understand hex colour codes. This release keeps the cleaner event accordion/swipe actions from v0.13.1 and the Fast Text setup assistant from v0.13.2, including RCS/Premium SMS guidance and a route to Android messaging settings. Android still requires protected RCS and Premium SMS settings to be changed by the user."
+          if gh release view v0.13.3 >/dev/null 2>&1; then
+            gh release upload v0.13.3 MHF-Event-Share-v0.13.3.apk --clobber
+          else
+            gh release create v0.13.3 MHF-Event-Share-v0.13.3.apk --title "MHF Event Share v0.13.3" --notes "$NOTES"
+          fi
