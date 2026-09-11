@@ -1,0 +1,93 @@
+{
+  "updated": "2026-09-11",
+  "items": [
+    {
+      "title": "World Mental Health Day",
+      "area": "National",
+      "type": "awareness",
+      "date": "2026-10-10",
+      "startTime": "",
+      "endTime": "",
+      "location": "",
+      "description": "A useful date for a coffee morning, Tea & Talk, wellbeing walk or community conversation. The 2026 theme is ‘Lived experiences heard: Real voices, real change’.",
+      "url": "https://www.mentalhealth.org.uk/our-work/public-engagement/world-mental-health-day"
+    },
+    {
+      "title": "World Suicide Prevention Day",
+      "area": "National",
+      "type": "awareness",
+      "date": "2027-09-10",
+      "startTime": "",
+      "endTime": "",
+      "location": "",
+      "description": "Annual suicide-prevention awareness day. Useful for planning a supportive conversation, information event or signposting campaign well in advance.",
+      "url": "https://www.who.int/campaigns/world-suicide-prevention-day"
+    },
+    {
+      "title": "Abingdon MIND mental-health drop-in",
+      "area": "Oxfordshire",
+      "type": "local",
+      "date": "2026-10-05",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "location": "Abingdon Library",
+      "description": "Local MIND mental-health drop-in listed by Oxfordshire County Council. Useful as a local activity to share or as inspiration for a similar event.",
+      "url": "https://www.oxfordshire.gov.uk/events?field_venue_target_id_1=2224&page=2&venue=2224"
+    },
+    {
+      "title": "Oxford Half Marathon for Oxfordshire Mind",
+      "area": "Oxfordshire",
+      "type": "local",
+      "date": "2026-10-11",
+      "startTime": "",
+      "endTime": "",
+      "location": "Oxford",
+      "description": "Oxfordshire Mind community fundraising event around movement, connection and mental health.",
+      "url": "https://www.oxfordshiremind.org.uk/events/oxford-half-marathon-2026/"
+    },
+    {
+      "title": "Parent Carer Wellbeing Hub",
+      "area": "Northamptonshire",
+      "type": "local",
+      "date": "2026-10-16",
+      "startTime": "10:30",
+      "endTime": "12:30",
+      "location": "Towcester Family Hub",
+      "description": "Relaxed wellbeing session for parent carers to connect, share experiences and find local support.",
+      "url": "https://www.westnorthants.gov.uk/events/34653"
+    },
+    {
+      "title": "Developmental Trauma and ACEs training",
+      "area": "Northamptonshire",
+      "type": "local",
+      "date": "2026-10-21",
+      "startTime": "09:30",
+      "endTime": "12:00",
+      "location": "Online",
+      "description": "Free Targeted Mental Health in Schools training on developmental trauma, adversity and supporting children and young people.",
+      "url": "https://www.westnorthants.gov.uk/early-years-schools-and-education/targeted-mental-health-schools-tamhs/tamhs-training"
+    },
+    {
+      "title": "Mind Over Mountains wellbeing walk",
+      "area": "Buckinghamshire",
+      "type": "local",
+      "date": "2026-10-18",
+      "startTime": "09:00",
+      "endTime": "16:00",
+      "location": "Buckinghamshire – see organiser page",
+      "description": "Therapeutic outdoor wellbeing walk listed in Buckinghamshire Council’s family information service.",
+      "url": "https://directory.familyinfo.buckinghamshire.gov.uk/service/14578?categories=mental-health&collection=advice-and-support&max_age=25&min_age=11&page=1"
+    },
+    {
+      "title": "Mental Health & Suicide First Aid training",
+      "area": "Buckinghamshire",
+      "type": "local",
+      "date": "",
+      "startTime": "",
+      "endTime": "",
+      "location": "Buckinghamshire / online",
+      "description": "Buckinghamshire Mind and Buckinghamshire Council offer funded Mental Health First Aid and Suicide First Aid courses during 2026 and 2027. Check the organiser for current dates.",
+      "url": "https://www.bucksmind.org.uk/training/fully-funded-courses-for-bucks-vcse-or-public-sector-employees-or-volunteers/"
+    }
+  ]
+}
