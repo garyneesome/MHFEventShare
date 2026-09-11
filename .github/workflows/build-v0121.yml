@@ -26,7 +26,7 @@ jobs:
 
       - name: Apply v0.12.1 SMS setup patch
         run: |
-          cat v0121_patch/v0121_code.b64 | base64 -d | gzip -d > v0121.patch
+          cat v0121_patch/chunks/v0121_code.b64.* | base64 -d | gzip -d > v0121.patch
           test -s v0121.patch
           patch -p1 -d MHFEventShare-v0.12.0 < v0121.patch
           mv MHFEventShare-v0.12.0 MHFEventShare-v0.12.1
