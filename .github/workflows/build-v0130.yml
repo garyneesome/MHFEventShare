@@ -64,8 +64,9 @@ jobs:
           grep -q "versionName '0.13.0'" MHFEventShare-v0.13.0/app/build.gradle
           grep -q 'android.permission.SEND_SMS' MHFEventShare-v0.13.0/app/src/main/AndroidManifest.xml
           grep -q 'directSmsMode' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
-          grep -q "Ideas & what's on" MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
-          grep -q 'swipeEventCard' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'Ideas & awareness' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'applyEventSwipeActions' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'startDirectSmsBatch' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
 
       - name: Package v0.13.0 source
         run: zip -qr MHFEventShare-v0.13.0-source.zip MHFEventShare-v0.13.0
@@ -115,7 +116,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          NOTES="Cleaner guided sending: text/email is one step and WhatsApp is the next. Recent and event-status lists are collapsible and event cards support swipe-left Edit/Delete. Optional Fast private text sending attempts one-to-one SMS directly with Android sent/failed callbacks and falls back to the Messages app if the phone blocks SEND_SMS. New Ideas & what's on section provides configurable mental-health awareness dates and curated Northamptonshire, Oxfordshire and Buckinghamshire ideas from a refreshable public feed."
+          NOTES="Cleaner guided sending: text/email is one step and WhatsApp is the next. Recent and event-status lists are collapsible and event cards support swipe right to edit and swipe left to delete. Optional private batch SMS sends separate one-to-one texts from MHF after one confirmation and records Android sent/failed results; the Messages-app fallback remains available. New Ideas & awareness provides configurable mental-health dates and curated Northamptonshire, Oxfordshire and Buckinghamshire ideas from a refreshable public feed."
           if gh release view v0.13.0 >/dev/null 2>&1; then
             gh release upload v0.13.0 MHF-Event-Share-v0.13.0.apk --clobber
           else
