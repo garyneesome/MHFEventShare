@@ -1,0 +1,90 @@
+name: Build Android APK v0.12.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out patch source
+        uses: actions/checkout@v4
+
+      - name: Download v0.12.0 source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 34581765381 -R garyneesome/MHFEventShare -n MHFEventShare-v0.12.0-source -D base
+          unzip -q base/MHFEventShare-v0.12.0-source.zip
+          test -d MHFEventShare-v0.12.0
+
+      - name: Apply v0.12.1 SMS setup patch
+        run: |
+          cat v0121_patch/v0121_code.b64 | base64 -d | gzip -d > v0121.patch
+          test -s v0121.patch
+          patch -p1 -d MHFEventShare-v0.12.0 < v0121.patch
+          mv MHFEventShare-v0.12.0 MHFEventShare-v0.12.1
+          grep -q "versionName '0.12.1'" MHFEventShare-v0.12.1/app/build.gradle
+          grep -q 'showSmsSetupAssistant' MHFEventShare-v0.12.1/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'smsSetupConfirmed' MHFEventShare-v0.12.1/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+
+      - name: Package v0.12.1 source
+        run: zip -qr MHFEventShare-v0.12.1-source.zip MHFEventShare-v0.12.1
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHFEventShare-v0.12.1-source
+          path: MHFEventShare-v0.12.1-source.zip
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Android SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build v0.12.1 APK
+        working-directory: MHFEventShare-v0.12.1
+        run: gradle assembleDebug --stacktrace
+
+      - name: Prepare named APK
+        run: cp MHFEventShare-v0.12.1/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.12.1.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHF-Event-Share-v0.12.1
+          path: MHF-Event-Share-v0.12.1.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release for in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Adds a one-time private multi-SMS setup assistant. MHF can open one Messages compose screen for all selected SMS recipients after the phone is configured for Mass text; the app links to Google Messages and Android Special app access, explains RCS/Premium SMS settings, and records sent/failed results per person after the batch. The unnecessary WhatsApp explanation card was removed from the text/email review screen."
+          if gh release view v0.12.1 >/dev/null 2>&1; then
+            gh release upload v0.12.1 MHF-Event-Share-v0.12.1.apk --clobber
+          else
+            gh release create v0.12.1 MHF-Event-Share-v0.12.1.apk --title "MHF Event Share v0.12.1" --notes "$NOTES"
+          fi
