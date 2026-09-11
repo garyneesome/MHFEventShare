@@ -1,0 +1,130 @@
+name: Build Android APK v0.13.1
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Reconstruct v0.12.0 source
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('.github/workflows/build-v0120.yml').read_text().splitlines()
+          wanted = {
+              'Reconstruct v0.11.0 source',
+              'Apply v0.12.0 event progress workflow',
+          }
+          out = ['set -euo pipefail']
+          i = 0
+          while i < len(src):
+              line = src[i]
+              if line.startswith('      - name: '):
+                  name = line[len('      - name: '):]
+                  if name in wanted:
+                      i += 1
+                      while i < len(src) and src[i].strip() != 'run: |':
+                          i += 1
+                      if i >= len(src):
+                          raise SystemExit(f'run block not found for {name}')
+                      i += 1
+                      while i < len(src) and not src[i].startswith('      - name: '):
+                          l = src[i]
+                          if l.startswith('          '):
+                              out.append(l[10:])
+                          elif l.strip():
+                              raise SystemExit(f'unexpected indentation in {name}: {l!r}')
+                          else:
+                              out.append('')
+                          i += 1
+                      continue
+              i += 1
+          Path('/tmp/rebuild-v012.sh').write_text('\n'.join(out) + '\n')
+          PY
+          bash /tmp/rebuild-v012.sh
+          grep -q "versionName '0.12.0'" MHFEventShare-v0.12.0/app/build.gradle
+
+      - name: Apply clean v0.13.0 UI and updater patch
+        run: |
+          cat v0131_patch/v013_code.b64 | base64 -d | gzip -d > v013.patch
+          test -s v013.patch
+          patch -p1 -d MHFEventShare-v0.12.0 < v013.patch
+          mv MHFEventShare-v0.12.0 MHFEventShare-v0.13.0
+          grep -q "versionName '0.13.0'" MHFEventShare-v0.13.0/app/build.gradle
+          grep -q 'showEventSwipeActions' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'Every 10 minutes' MHFEventShare-v0.13.0/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+
+      - name: Apply v0.13.1 ideas and accordions
+        run: |
+          cat v0131_ideas/v0131_ideas.b64 | base64 -d | gzip -d > v0131.patch
+          test -s v0131.patch
+          patch -p1 -d MHFEventShare-v0.13.0 < v0131.patch
+          mv MHFEventShare-v0.13.0 MHFEventShare-v0.13.1
+          grep -q "versionName '0.13.1'" MHFEventShare-v0.13.1/app/build.gradle
+          grep -q 'Ideas & awareness dates' MHFEventShare-v0.13.1/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'ideasNorthamptonshire' MHFEventShare-v0.13.1/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+          grep -q 'addEventAccordion' MHFEventShare-v0.13.1/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+
+      - name: Package v0.13.1 source
+        run: zip -qr MHFEventShare-v0.13.1-source.zip MHFEventShare-v0.13.1
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHFEventShare-v0.13.1-source
+          path: MHFEventShare-v0.13.1-source.zip
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Android SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build v0.13.1 APK
+        working-directory: MHFEventShare-v0.13.1
+        run: gradle assembleDebug --stacktrace
+
+      - name: Prepare named APK
+        run: cp MHFEventShare-v0.13.1/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.13.1.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHF-Event-Share-v0.13.1
+          path: MHF-Event-Share-v0.13.1.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub Release for in-app updater
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NOTES="Cleaner event management and sending flow. WhatsApp follows text/email without an explanatory card. Facebook calendar import is a yellow primary action. Event sections are collapsible and cards use swipe-left actions for Edit, Duplicate and Delete. Update checking can be set as often as every 10 minutes while the app is active, with a catch-up check on return. New Ideas & awareness dates can start events from key mental-health dates and provide configurable local inspiration searches for Northamptonshire, Oxfordshire and Buckinghamshire."
+          if gh release view v0.13.1 >/dev/null 2>&1; then
+            gh release upload v0.13.1 MHF-Event-Share-v0.13.1.apk --clobber
+          else
+            gh release create v0.13.1 MHF-Event-Share-v0.13.1.apk --title "MHF Event Share v0.13.1" --notes "$NOTES"
+          fi
