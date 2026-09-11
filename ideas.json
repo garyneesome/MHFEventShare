@@ -1,0 +1,103 @@
+{
+  "updated": "2026-09-11",
+  "awareness": [
+    {
+      "title": "World Mental Health Day",
+      "date": "2026-10-10",
+      "summary": "A worldwide opportunity to start conversations and create activities around mental health.",
+      "idea": "Create a friendly coffee, walk or drop-in event for World Mental Health Day.",
+      "url": "https://www.who.int/campaigns/world-mental-health-day/2026"
+    },
+    {
+      "title": "International Men's Day",
+      "date": "2026-11-19",
+      "summary": "A useful prompt for an event focused on men's wellbeing, connection and open conversation.",
+      "idea": "Consider a relaxed men's wellbeing coffee, walk or conversation event.",
+      "url": "https://ukmensday.org.uk/2026-theme/"
+    },
+    {
+      "title": "World Bipolar Day",
+      "date": "2027-03-30",
+      "summary": "An annual day to increase awareness of bipolar disorders and reduce stigma.",
+      "idea": "Create an informal awareness or lived-experience conversation event.",
+      "url": "https://www.worldbipolarday.org/"
+    },
+    {
+      "title": "World Suicide Prevention Day",
+      "date": "2027-09-10",
+      "summary": "An annual day focused on suicide prevention and compassionate, stigma-free conversation.",
+      "idea": "Plan a carefully worded community conversation or signposting event with appropriate support information.",
+      "url": "https://www.who.int/campaigns/world-suicide-prevention-day"
+    }
+  ],
+  "local": [
+    {
+      "county": "Northamptonshire",
+      "title": "Northamptonshire Mind Gala Ball",
+      "date": "2026-11-21",
+      "time": "18:00",
+      "endTime": "23:00",
+      "venue": "Sedgebrook Hall, Chapel Brampton",
+      "summary": "A Northamptonshire Mind fundraising evening supporting local mental-health services.",
+      "idea": "Use this as inspiration for a fundraising or awareness event, or open the source to see whether your group wants to attend.",
+      "url": "https://www.northamptonshiremind.org.uk/event-details-registration/northamptonshire-mind-gala-ball"
+    },
+    {
+      "county": "Oxfordshire",
+      "title": "Oxford Half Marathon 2026",
+      "date": "2026-10-11",
+      "venue": "Oxford",
+      "summary": "Oxfordshire Mind fundraising activity around the Oxford Half Marathon.",
+      "idea": "Consider a supporter meet-up, cheering point or wellbeing walk around the same weekend.",
+      "url": "https://www.oxfordshiremind.org.uk/events/oxford-half-marathon-2026/"
+    },
+    {
+      "county": "Oxfordshire",
+      "title": "Abingdon Marathon",
+      "date": "2026-10-18",
+      "time": "09:00",
+      "venue": "Abingdon-on-Thames",
+      "summary": "An Oxfordshire Mind fundraising opportunity.",
+      "idea": "Consider a supporter meet-up or movement-for-wellbeing event.",
+      "url": "https://www.oxfordshiremind.org.uk/events/"
+    },
+    {
+      "county": "Oxfordshire",
+      "title": "Mental Elf 5k Run",
+      "date": "2026-11-28",
+      "summary": "A festive Oxfordshire Mind community fundraising event.",
+      "idea": "A useful prompt for a festive walk, coffee or fundraising event.",
+      "url": "https://www.oxfordshiremind.org.uk/support-us/volunteer/volunteer-roles/events-and-fundraising-volunteer/"
+    },
+    {
+      "county": "Oxfordshire",
+      "title": "Bullet Journaling workshop",
+      "date": "2026-10-28",
+      "time": "10:00",
+      "endTime": "12:30",
+      "venue": "Abingdon Mind Hub",
+      "summary": "Oxfordshire Mind workshop on bullet journaling and managing time.",
+      "idea": "Open the source for booking details, or use the topic as inspiration for your own wellbeing activity.",
+      "url": "https://www.oxfordshiremind.org.uk/support-for-you/free-workshops/"
+    },
+    {
+      "county": "Oxfordshire",
+      "title": "Decluttering for Wellbeing workshop",
+      "date": "2026-11-11",
+      "time": "13:00",
+      "endTime": "15:30",
+      "venue": "Witney Mind Hub",
+      "summary": "Workshop exploring how organising physical spaces can support mental clarity and wellbeing.",
+      "idea": "Open the source for booking details, or use the topic as inspiration for a local discussion/activity.",
+      "url": "https://www.oxfordshiremind.org.uk/support-for-you/free-workshops/"
+    },
+    {
+      "county": "Buckinghamshire",
+      "title": "Mental Health & Suicide First Aid courses",
+      "displayDate": "Courses through 2026–2027",
+      "summary": "Buckinghamshire Mind and Buckinghamshire Council are offering funded training for eligible community, charity and public-sector staff or volunteers.",
+      "idea": "Check the current course dates, or use the topics as inspiration for a local information session.",
+      "url": "https://www.bucksmind.org.uk/training/fully-funded-courses-for-bucks-vcse-or-public-sector-employees-or-volunteers/"
+    }
+  ]
+}
