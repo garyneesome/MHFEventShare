@@ -1,0 +1,80 @@
+name: Build Android APK v0.13.6 Attachments and Scroll Header
+
+on:
+  push:
+    branches: [ attachments-scroll-v0.13.6 ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out v0.13.6 branch
+        uses: actions/checkout@v4
+
+      - name: Download tested v0.13.5 source artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 34638094250 -R garyneesome/MHFEventShare -n MHFEventShare-v0.13.5-source -D base
+          unzip -q base/MHFEventShare-v0.13.5-source.zip
+          test -d MHFEventShare-v0.13.5
+
+      - name: Apply v0.13.6 attachments and scrolling-header patch
+        run: |
+          base64 -d v0136_patch/v0136.patch.gz.b64 | gzip -d > v0136.patch
+          test -s v0136.patch
+          patch -p1 -d MHFEventShare-v0.13.5 < v0136.patch
+          mv MHFEventShare-v0.13.5 MHFEventShare-v0.13.6
+          grep -q "versionCode 136" MHFEventShare-v0.13.6/app/build.gradle
+          grep -q "versionName '0.13.6'" MHFEventShare-v0.13.6/app/build.gradle
+          grep -q 'Attachments & links' MHFEventShare-v0.13.6/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'REQ_PICK_EVENT_ATTACHMENTS' MHFEventShare-v0.13.6/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'setHeaderCollapsed' MHFEventShare-v0.13.6/app/src/main/java/uk/co/mentalhealthfriends/eventshare/MainActivity.java
+          grep -q 'smsMessage' MHFEventShare-v0.13.6/app/src/main/java/uk/co/mentalhealthfriends/eventshare/Models.java
+
+      - name: Package v0.13.6 source
+        run: zip -qr MHFEventShare-v0.13.6-source.zip MHFEventShare-v0.13.6
+
+      - name: Upload source artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHFEventShare-v0.13.6-source
+          path: MHFEventShare-v0.13.6-source.zip
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Android SDK 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build v0.13.6 APK
+        working-directory: MHFEventShare-v0.13.6
+        run: gradle assembleDebug --stacktrace
+
+      - name: Prepare named APK
+        run: cp MHFEventShare-v0.13.6/app/build/outputs/apk/debug/app-debug.apk MHF-Event-Share-v0.13.6.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MHF-Event-Share-v0.13.6
+          path: MHF-Event-Share-v0.13.6.apk
+          if-no-files-found: error
